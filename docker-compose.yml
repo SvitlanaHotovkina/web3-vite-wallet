@@ -6,10 +6,12 @@ services:
     container_name: web3-vite-wallet
     restart: always
     ports:
-      - "5000:5000" # Теперь Vite будет доступен снаружи на 5000
+      - "5000:5173" # Внутри контейнера 5173 -> наружу 5000
     environment:
       - NODE_ENV=development
     volumes:
       - .:/app
       - /app/node_modules
     command: ["npm", "run", "dev"]
+    stdin_open: true
+    tty: true

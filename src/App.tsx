@@ -9,6 +9,9 @@ interface Wallet {
 const App: React.FC = () => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
 
+  console.log("🔹 App.tsx загружен!");
+  console.log("🔹 Текущее состояние wallet:", wallet);
+
   return (
     <div>
       <h1>Web3 Vite Wallet</h1>

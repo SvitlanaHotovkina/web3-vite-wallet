@@ -1,69 +1,162 @@
 import React, { useState } from "react";
-import CryptoJS from "crypto-js";
-import { generateMnemonic, validateMnemonic, mnemonicToSeedSync } from "bip39";
-import { hdkey } from "ethereumjs-wallet";
+import { HDNodeWallet } from "ethers/wallet";
 
 interface WalletSetupProps {
   onWalletCreated: (wallet: { address: string; privateKey: string }) => void;
 }
 
-const WalletSetup: React.FC<WalletSetupProps> = ({ onWalletCreated }) => {
-  const [mnemonic, setMnemonic] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+const WalletSetup: React.FC<WalletSetupProps> = () => {
+  const [phrase, setMnemonic] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<{
+    address: string;
+    privateKey: string;
+  } | null>(null);
+
+  const [step, setStep] = useState<
+    "start" | "showPhrase" | "import" | "showPrivateKey" | "wallet"
+  >("start");
 
   const createWallet = (): void => {
-    const newMnemonic = generateMnemonic();
-    setMnemonic(newMnemonic);
-    encryptAndStoreMnemonic(newMnemonic);
-    deriveWallet(newMnemonic);
+    const newRandom = HDNodeWallet.createRandom();
+    if (!newRandom?.mnemonic) return;
+
+    const newPhrase = newRandom.mnemonic.phrase;
+    setMnemonic(newPhrase);
+    try {
+      const wallet = HDNodeWallet.fromPhrase(newPhrase);
+      setWallet(wallet);
+      setStep("showPhrase");
+    } catch (error) {
+      console.error("❌ Помилка створення гаманця:", error);
+      alert("Не вдалося створити гаманець.");
+    }
   };
 
   const importWallet = (): void => {
-    if (!validateMnemonic(mnemonic)) {
+    if (!phrase) {
       alert("Невірна мнемонічна фраза!");
       return;
     }
-    encryptAndStoreMnemonic(mnemonic);
-    deriveWallet(mnemonic);
-  };
-
-  const encryptAndStoreMnemonic = (mnemonic: string): void => {
-    if (!password) {
-      alert("Введіть пароль для шифрування!");
-      return;
+    try {
+      const wallet = HDNodeWallet.fromPhrase(phrase);
+      setWallet(wallet);
+      setStep("showPrivateKey");
+    } catch (error) {
+      console.error("❌ Помилка відновлення гаманця:", error);
+      alert("Не вдалося відновити гаманець.");
     }
-    const encrypted = CryptoJS.AES.encrypt(mnemonic, password).toString();
-    localStorage.setItem("wallet_mnemonic", encrypted);
-  };
-
-  const deriveWallet = (mnemonic: string): void => {
-    const seed = mnemonicToSeedSync(mnemonic);
-    const hdWallet = hdkey.fromMasterSeed(seed);
-    const derivedWallet = hdWallet.derivePath("m/44'/60'/0'/0/0").getWallet();
-    onWalletCreated({
-      address: `0x${derivedWallet.getAddress().toString("hex")}`,
-      privateKey: `0x${derivedWallet.getPrivateKey().toString("hex")}`,
-    });
   };
 
   return (
-    <div>
-      <h3>Налаштування гаманця</h3>
-      <input
-        type="password"
-        placeholder="Введіть пароль"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={createWallet}>Створити гаманець</button>
-      <h3>Або імпортуйте мнемонічну фразу</h3>
-      <input
-        type="text"
-        placeholder="Введіть мнемонічну фразу"
-        value={mnemonic}
-        onChange={(e) => setMnemonic(e.target.value)}
-      />
-      <button onClick={importWallet}>Імпортувати</button>
+    <div
+      style={{
+        maxWidth: "400px",
+        margin: "auto",
+        textAlign: "center",
+        padding: "20px",
+        border: "1px solid #ddd",
+        borderRadius: "8px",
+      }}
+    >
+      {step === "start" && (
+        <>
+          <button
+            onClick={createWallet}
+            style={{ margin: "10px", padding: "10px", cursor: "pointer" }}
+          >
+            🆕 Створити новий гаманець
+          </button>
+          <button
+            onClick={() => setStep("import")}
+            style={{ margin: "10px", padding: "10px", cursor: "pointer" }}
+          >
+            🔄 Відновити з фрази
+          </button>
+        </>
+      )}
+
+      {step === "showPhrase" && wallet && (
+        <div>
+          <h3>Ваша мнемонічна фраза:</h3>
+          <p
+            style={{ background: "#eee", padding: "10px", borderRadius: "5px" }}
+          >
+            <b>{phrase}</b>
+          </p>
+          <h3>Ваш приватний ключ:</h3>
+          <p
+            style={{
+              background: "#eee",
+              padding: "10px",
+              borderRadius: "5px",
+              wordWrap: "break-word",
+            }}
+          >
+            <b>{wallet.privateKey}</b>
+          </p>
+          <button
+            onClick={() => setStep("wallet")}
+            style={{ marginTop: "10px", padding: "10px", cursor: "pointer" }}
+          >
+            ✅ Я зберіг фразу
+          </button>
+        </div>
+      )}
+
+      {step === "import" && (
+        <div>
+          <h3>🔑 Введіть мнемонічну фразу</h3>
+          <textarea
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "5px",
+              marginBottom: "10px",
+            }}
+            placeholder="Введіть мнемонічну фразу"
+            value={phrase || ""}
+            onChange={(e) => setMnemonic(e.target.value)}
+          />
+          <button
+            onClick={importWallet}
+            style={{ padding: "10px", cursor: "pointer" }}
+          >
+            🔄 Відновити
+          </button>
+        </div>
+      )}
+
+      {step === "showPrivateKey" && wallet && (
+        <div>
+          <h3>Ваш приватний ключ:</h3>
+          <p
+            style={{
+              background: "#eee",
+              padding: "10px",
+              borderRadius: "5px",
+              wordWrap: "break-word",
+            }}
+          >
+            <b>{wallet.privateKey}</b>
+          </p>
+          <button
+            onClick={() => setStep("wallet")}
+            style={{ marginTop: "10px", padding: "10px", cursor: "pointer" }}
+          >
+            ✅ Я зберіг приватний ключ
+          </button>
+        </div>
+      )}
+
+      {step === "wallet" && wallet && (
+        <div>
+          <h3>🎉 Ваш гаманець готовий!</h3>
+          <p>
+            <b>📍 Адреса:</b> {wallet.address}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
