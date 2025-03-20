@@ -6,10 +6,10 @@ services:
     container_name: web3-vite-wallet
     restart: always
     ports:
-      - "5173:5173" # Vite (React/Vue)
+      - "5000:5000" # Теперь Vite будет доступен снаружи на 5000
     environment:
       - NODE_ENV=development
     volumes:
-      - .:/app # mirror
-      - /app/node_modules # stop conflicts
-    command: ["npm", "run", "dev:host"]
+      - .:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev"]
