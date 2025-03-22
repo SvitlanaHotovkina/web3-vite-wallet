@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { unlockWallet } from "@/utils/wallet-unlock";
 import { WalletSession } from "@/utils/walletSession";
+import NetworkSwitcher from "@/components/NetworkSwitcher";
 
 export default function WalletDashboard({
   walletSession,
@@ -26,7 +27,6 @@ export default function WalletDashboard({
       setTimeout(() => setPrivateKey(null), 30000); // Очистить через 30 секунд
     } catch (error) {
       console.log(error);
-
       alert("Неверный пароль");
     }
   };
@@ -38,6 +38,9 @@ export default function WalletDashboard({
         <p>
           <strong>📌 Адреса:</strong> {walletSession.address}
         </p>
+      </div>
+      <div className="pt-2">
+        <NetworkSwitcher />
       </div>
       {privateKey && (
         <p className="text-red-500 mt-2">
