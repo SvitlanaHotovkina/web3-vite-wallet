@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-import { ethers } from "ethers";
 import { getWalletSession, updateWalletSession } from "./walletSession";
 import { getWalletInfo } from "./getWalletInfo";
 
-export function useWalletInfoUpdater(provider: ethers.JsonRpcProvider) {
+export function useWalletInfoUpdater(doIt: boolean) {
   useEffect(() => {
     let isCancelled = false;
 
@@ -12,6 +11,7 @@ export function useWalletInfoUpdater(provider: ethers.JsonRpcProvider) {
       if (!session) return;
 
       try {
+        console.log("🌀 Оновлення...");
         const newInfo = await getWalletInfo(session.address);
         const updated = {
           ...session,
@@ -33,5 +33,5 @@ export function useWalletInfoUpdater(provider: ethers.JsonRpcProvider) {
     return () => {
       isCancelled = true; // очищення при анмаунті компонента
     };
-  }, [provider]);
+  }, [doIt]);
 }

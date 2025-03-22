@@ -28,6 +28,22 @@ export const NETWORKS = [
     name: "Polygon Mumbai",
     rpcUrl: "https://rpc-mumbai.maticvigil.com",
   },
+  {
+    name: "BSC Mainnet",
+    rpcUrl: "https://bsc-dataseed.binance.org/",
+  },
+  {
+    name: "BSC Testnet",
+    rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+  },
+  {
+    name: "Polygon zkEVM Testnet-1442",
+    rpcUrl: "https://rpc.public.zkevm-test.net",
+  },
+  {
+    name: "Polygon Amoy Testnet-80002",
+    rpcUrl: "https://rpc-amoy.polygon.technology",
+  },
 ];
 
 export function createWalletSession(data: WalletSession, rpcUrl?: string) {
