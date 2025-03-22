@@ -1,33 +1,42 @@
-import React, { useState } from "react";
-import WalletSetup from "./components/WalletSetup";
+import { useEffect, useState } from "react";
+import WalletDashboard from "@/components/WalletDashboard";
+import PutPassword from "@/components/PutPassword";
+import OnBoarding from "@/components/OnBoarding";
+import { getWalletSession, clearWalletSession } from "@/utils/walletSession";
+import { getEncryptedWallet } from "@/utils/walletStorage";
 
-interface Wallet {
-  address: string;
-  privateKey: string;
+function App() {
+  const [walletSession, setWalletSession] = useState(getWalletSession());
+  const [state, setState] = useState<
+    "checking" | "onboarding" | "put-password" | "dashboard"
+  >("checking");
+
+  useEffect(() => {
+    if (walletSession) {
+      setState("dashboard");
+    } else {
+      getEncryptedWallet().then((w) => {
+        setState(w ? "put-password" : "onboarding");
+      });
+    }
+  }, [walletSession]);
+
+  const handleLogout = () => {
+    clearWalletSession();
+    location.reload(); // Перезагружаем страницу
+  };
+
+  if (state === "checking")
+    return <p className="p-4">🔄 Проверка состояния кошелька...</p>;
+  if (state === "dashboard" && walletSession)
+    return (
+      <WalletDashboard walletSession={walletSession} onLogout={handleLogout} />
+    );
+  if (state === "put-password")
+    return (
+      <PutPassword onSuccess={() => setWalletSession(getWalletSession())} />
+    );
+  return <OnBoarding onCreated={() => setWalletSession(getWalletSession())} />;
 }
-
-const App: React.FC = () => {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-
-  console.log("🔹 App.tsx загружен!");
-  console.log("🔹 Текущее состояние wallet:", wallet);
-
-  return (
-    <div>
-      <h1>Web3 Vite Wallet</h1>
-      {!wallet ? (
-        <WalletSetup onWalletCreated={setWallet} />
-      ) : (
-        <div>
-          <h3>Ваш гаманець</h3>
-          <p>
-            <b>Адреса:</b> {wallet.address}
-          </p>
-          <button onClick={() => setWallet(null)}>Вийти</button>
-        </div>
-      )}
-    </div>
-  );
-};
 
 export default App;
