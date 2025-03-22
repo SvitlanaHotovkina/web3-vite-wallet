@@ -1,30 +1,35 @@
-// components/NetworkSwitcher.tsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   NETWORKS,
   getWalletSession,
   updateWalletSession,
 } from "@/utils/walletSession";
 
-export const LOCAL_RPC_KEY = "selectedRpcUrl";
-
 export default function NetworkSwitcher() {
   const [selectedRpc, setSelectedRpc] = useState<string>("");
 
+  // Отримуємо поточний rpcUrl з walletSession
   useEffect(() => {
-    const saved = localStorage.getItem(LOCAL_RPC_KEY);
-    setSelectedRpc(saved || NETWORKS[0].rpcUrl);
+    const loadRpc = async () => {
+      const session = await getWalletSession();
+      const rpc = session?.rpcUrl || NETWORKS[0].rpcUrl;
+      setSelectedRpc(rpc);
+    };
+    loadRpc();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRpc = e.target.value;
     setSelectedRpc(newRpc);
-    localStorage.setItem(LOCAL_RPC_KEY, newRpc);
 
-    const session = getWalletSession();
-    if (session) {
-      updateWalletSession({ ...session, rpcUrl: newRpc });
+    const session = await getWalletSession();
+    if (!session) {
+      console.warn("❌ Сесія не знайдена");
+      return;
     }
+
+    await updateWalletSession({ ...session, rpcUrl: newRpc });
+    console.log("✅ rpcUrl оновлено в сесії:", newRpc);
   };
 
   return (

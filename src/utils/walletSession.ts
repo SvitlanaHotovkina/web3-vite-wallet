@@ -1,11 +1,13 @@
-import { LOCAL_RPC_KEY } from "@/components/NetworkSwitcher";
+import { openDB } from "idb";
 
+const DB_NAME = "WalletDB";
+const STORE_NAME = "session";
 const SESSION_KEY = "walletSession";
 
 export type WalletSession = {
-  address: string; // Адреса гаманця
-  balance: string; // Баланс у ETH (або поточній мережі)
-  network: string; // Назва мережі (Ethereum, Arbitrum, BSC тощо)
+  address: string;
+  balance: string;
+  network: string;
   rpcUrl?: string;
   tokens?: Array<{
     symbol: string;
@@ -13,25 +15,14 @@ export type WalletSession = {
     contractAddress: string;
     decimals: number;
   }>;
-  lastTxHash?: string; // Хеш останньої транзакції (опціонально)
+  lastTxHash?: string;
 };
+
 export const NETWORKS = [
-  {
-    name: "Sepolia",
-    rpcUrl: "https://rpc.sepolia.org",
-  },
-  {
-    name: "Goerli",
-    rpcUrl: "https://rpc.ankr.com/eth_goerli",
-  },
-  {
-    name: "Polygon Mumbai",
-    rpcUrl: "https://rpc-mumbai.maticvigil.com",
-  },
-  {
-    name: "BSC Mainnet",
-    rpcUrl: "https://bsc-dataseed.binance.org/",
-  },
+  { name: "Sepolia", rpcUrl: "https://rpc.sepolia.org" },
+  { name: "Goerli", rpcUrl: "https://rpc.ankr.com/eth_goerli" },
+  { name: "Polygon Mumbai", rpcUrl: "https://rpc-mumbai.maticvigil.com" },
+  { name: "BSC Mainnet", rpcUrl: "https://bsc-dataseed.binance.org/" },
   {
     name: "BSC Testnet",
     rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
@@ -46,26 +37,42 @@ export const NETWORKS = [
   },
 ];
 
-export function createWalletSession(data: WalletSession, rpcUrl?: string) {
-  const storedRpc = localStorage.getItem(LOCAL_RPC_KEY);
+async function getDB() {
+  return openDB(DB_NAME, 1, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    },
+  });
+}
+
+export async function createWalletSession(
+  data: WalletSession,
+  rpcUrl?: string
+) {
+  const oldSesions = await getWalletSession();
   const session: WalletSession = {
     ...data,
-    rpcUrl: rpcUrl || storedRpc || NETWORKS[0].rpcUrl,
+    rpcUrl: rpcUrl || oldSesions?.rpcUrl || NETWORKS[0].rpcUrl,
   };
 
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  const db = await getDB();
+  await db.put(STORE_NAME, session, SESSION_KEY);
 }
 
-export function updateWalletSession(data: WalletSession) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+export async function updateWalletSession(data: WalletSession) {
+  const db = await getDB();
+  await db.put(STORE_NAME, data, SESSION_KEY);
 }
 
-export function getWalletSession(): WalletSession | null {
-  const raw = sessionStorage.getItem(SESSION_KEY);
-  return raw ? JSON.parse(raw) : null;
+export async function getWalletSession(): Promise<WalletSession | null> {
+  const db = await getDB();
+  const data = await db.get(STORE_NAME, SESSION_KEY);
+  return data ?? null;
 }
 
-// ✅ Очистить сессию (при выходе)
-export function clearWalletSession() {
-  sessionStorage.removeItem(SESSION_KEY);
+export async function clearWalletSession() {
+  const db = await getDB();
+  await db.delete(STORE_NAME, SESSION_KEY);
 }
