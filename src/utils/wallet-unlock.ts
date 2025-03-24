@@ -1,7 +1,8 @@
 import { HDNodeWallet } from "ethers/wallet";
 import { toUtf8Bytes } from "ethers";
 import { getEncryptedWallet } from "@/utils/walletStorage";
-import { createWalletSession } from "./walletSession";
+import { createWalletSession, getWalletSession } from "./walletSession";
+import { serverLogger } from "./server-logger";
 
 // --- Web Crypto: создание ключа из пароля ---
 async function deriveKey(
@@ -42,7 +43,7 @@ function decodeBase64(encoded: string): Uint8Array {
 // --- Разблокировка кошелька ---
 export async function unlockWallet(password: string) {
   try {
-    console.log("🔓 Разблокировка кошелька...");
+    serverLogger.debug("🔓 Разблокировка кошелька...");
 
     const encryptedWallet = await getEncryptedWallet();
     if (!encryptedWallet) {
@@ -52,7 +53,7 @@ export async function unlockWallet(password: string) {
     const { ciphertext, iv, salt } = JSON.parse(encryptedWallet);
     const key = await deriveKey(password, decodeBase64(salt));
 
-    console.log("🔑 Расшифровываем мнемоническую фразу...");
+    serverLogger.debug("🔑 Расшифровываем мнемоническую фразу...");
     const decrypted = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv: decodeBase64(iv) },
       key,
@@ -62,21 +63,29 @@ export async function unlockWallet(password: string) {
     const mnemonic = new TextDecoder().decode(decrypted);
     const wallet = HDNodeWallet.fromPhrase(mnemonic);
 
-    // Сохранение публичных данных в сессию
-    createWalletSession({
-      address: wallet.address,
-      network: "Ethereum",
-      balance: "0.0",
-    });
+    const oldWalletSession = await getWalletSession();
 
-    console.log("✅ Кошелек успешно разблокирован!");
+    if (oldWalletSession?.address === wallet.address) {
+      serverLogger.debug("✅ Кошелек успешно разблокирован!");
+    } else {
+      // Сохранение публичных данных в сессию
+      createWalletSession({
+        address: wallet.address,
+        network: "Ethereum",
+        balance: "0.0",
+      });
+      serverLogger.debug(
+        "✅ Кошелек успешно разблокирован  и создана новая сессия!"
+      );
+    }
+
     return {
       mnemonic,
       address: wallet.address,
       privateKey: wallet.privateKey,
     };
   } catch (error) {
-    console.error("Ошибка при разблокировке кошелька:", error);
+    serverLogger.warn("Ошибка при разблокировке кошелька:", { error });
     throw new Error("❌ Неверный пароль!");
   }
 }

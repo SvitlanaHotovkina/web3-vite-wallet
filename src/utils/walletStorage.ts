@@ -1,4 +1,5 @@
 import { openDB } from "idb";
+import { serverLogger } from "./server-logger";
 
 const DB_NAME = "walletDB";
 const STORE_NAME = "walletStore";
@@ -25,7 +26,7 @@ export async function getEncryptedWallet(): Promise<string | null> {
     const db = await initDB();
     return await db.get(STORE_NAME, "wallet");
   } catch (error) {
-    console.error("Ошибка при получении кошелька:", error);
+    serverLogger.warn("Ошибка при получении кошелька:", { error });
     return null;
   }
 }
@@ -35,9 +36,9 @@ export async function saveEncryptedWallet(encryptedWallet: string) {
   try {
     const db = await initDB();
     await db.put(STORE_NAME, encryptedWallet, "wallet");
-    console.log("✅ Кошелек сохранен!");
+    serverLogger.debug("✅ Кошелек сохранен!");
   } catch (error) {
-    console.error("Ошибка при сохранении кошелька:", error);
+    serverLogger.warn("Ошибка при сохранении кошелька:", { error });
   }
 }
 
@@ -46,8 +47,8 @@ export async function deleteWallet() {
   try {
     const db = await initDB();
     await db.delete(STORE_NAME, "wallet");
-    console.log("🗑️ Кошелек удален!");
+    serverLogger.warn("🗑️ Кошелек удален!");
   } catch (error) {
-    console.error("Ошибка при удалении кошелька:", error);
+    serverLogger.warn("Ошибка при удалении кошелька:", { error });
   }
 }

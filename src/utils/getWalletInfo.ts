@@ -1,6 +1,7 @@
 import { ethers, Contract, Network } from "ethers";
 import { getWalletSession, WalletSession } from "./walletSession";
 import { JsonRpcProvider } from "ethers";
+import { serverLogger } from "./server-logger";
 
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
@@ -15,25 +16,20 @@ const KNOWN_TOKENS: Record<string, { symbol: string; address: string }[]> = {
   ],
 };
 
-// ✅ Глобальний прапорець контролю паралельного запуску
-let isRunning = false;
-
 export async function getWalletInfo(
-  address: string
+  address: string,
+  rpcUrl: string,
+  abortSignal?: AbortSignal
 ): Promise<WalletSession | null> {
-  if (isRunning) {
-    console.warn("⏳ getWalletInfo already running — skipping this tick");
-    return null;
-  }
-
-  isRunning = true;
-
   const session = await getWalletSession();
 
-  if (!session?.rpcUrl) {
-    console.log("!session?.rpcUrl");
-    isRunning = false;
-    return session;
+  if (!session) return null;
+
+  serverLogger.debug("getWalletInfo", { rpcUrl });
+
+  if (!rpcUrl) {
+    serverLogger.warn("!rpcUrl");
+    return null;
   }
 
   let provider: JsonRpcProvider;
@@ -42,27 +38,35 @@ export async function getWalletInfo(
   let networkName: string;
 
   try {
-    provider = new JsonRpcProvider(session.rpcUrl);
+    provider = new JsonRpcProvider(rpcUrl);
     network = await provider.getNetwork();
+    if (abortSignal?.aborted) throw new Error("Aborted after network fetch");
+
     balance = await provider.getBalance(address);
+    if (abortSignal?.aborted) throw new Error("Aborted after balance fetch");
+
     networkName = network.name.toLowerCase();
   } catch (error) {
-    console.log("❌ Provider/network error:", error);
-    isRunning = false;
-    return session;
+    serverLogger.debug("❌ Provider/network error:", { error });
+    return null;
   }
 
   const tokens: WalletSession["tokens"] = [];
   const knownTokens = KNOWN_TOKENS[networkName] || [];
 
   for (const token of knownTokens) {
+    if (abortSignal?.aborted) break;
     try {
       const contract = new Contract(token.address, ERC20_ABI, provider);
-      const [rawBalance, decimals, symbol] = await Promise.all([
-        contract.balanceOf(address),
-        contract.decimals(),
-        contract.symbol(),
-      ]);
+
+      const rawBalance = await contract.balanceOf(address);
+      if (abortSignal?.aborted) break;
+
+      const decimals = await contract.decimals();
+      if (abortSignal?.aborted) break;
+
+      const symbol = await contract.symbol();
+      if (abortSignal?.aborted) break;
 
       tokens.push({
         symbol: symbol || token.symbol,
@@ -71,17 +75,15 @@ export async function getWalletInfo(
         decimals,
       });
     } catch (e) {
-      console.warn(`⚠️ Не вдалося отримати токен ${token.symbol}:`, e);
+      serverLogger.warn(`⚠️ Не вдалося отримати токен ${token.symbol}:`, { e });
     }
   }
-
-  isRunning = false;
 
   return {
     address,
     network: networkName,
     balance: ethers.formatEther(balance),
-    rpcUrl: session.rpcUrl,
+    rpcUrl,
     tokens,
   };
 }

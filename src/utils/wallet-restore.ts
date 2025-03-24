@@ -2,6 +2,7 @@ import { HDNodeWallet } from "ethers/wallet";
 import { toUtf8Bytes } from "ethers";
 import { saveEncryptedWallet } from "@/utils/walletStorage";
 import { createWalletSession } from "./walletSession";
+import { serverLogger } from "./server-logger";
 
 // --- Генерация случайного пароля ---
 function generatePassword(length = 12): string {
@@ -62,7 +63,7 @@ async function encryptMnemonic(mnemonic: string, password: string) {
 // --- Восстановление кошелька ---
 export async function restoreWallet(mnemonic: string) {
   try {
-    console.log("🚀 Восстанавливаем кошелек...");
+    serverLogger.debug("🚀 Восстанавливаем кошелек...");
     const wallet = HDNodeWallet.fromPhrase(mnemonic);
 
     if (!wallet?.mnemonic?.phrase) {
@@ -77,13 +78,13 @@ export async function restoreWallet(mnemonic: string) {
     });
 
     const password = generatePassword();
-    console.log("🔐 Генерируем пароль и шифруем данные...");
+    serverLogger.debug("🔐 Генерируем пароль и шифруем данные...");
     const encrypted = await encryptMnemonic(mnemonic, password);
 
-    console.log("💾 Сохраняем кошелек в IndexedDB...");
+    serverLogger.debug("💾 Сохраняем кошелек в IndexedDB...");
     await saveEncryptedWallet(JSON.stringify(encrypted));
 
-    console.log("✅ Кошелек успешно восстановлен!");
+    serverLogger.debug("✅ Кошелек успешно восстановлен!");
     return {
       password,
       address: wallet.address,
@@ -91,7 +92,7 @@ export async function restoreWallet(mnemonic: string) {
       mnemonic,
     };
   } catch (error) {
-    console.error("Ошибка при восстановлении кошелька:", error);
+    serverLogger.warn("Ошибка при восстановлении кошелька:", { error });
     throw new Error("❌ Неверная мнемофраза!");
   }
 }

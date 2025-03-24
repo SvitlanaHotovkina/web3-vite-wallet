@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { unlockWallet } from "@/utils/wallet-unlock";
+import { serverLogger } from "@/utils/server-logger";
 
 export default function PutPassword({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState("");
@@ -13,7 +14,7 @@ export default function PutPassword({ onSuccess }: { onSuccess: () => void }) {
 
       onSuccess();
     } catch (err) {
-      console.log(err);
+      serverLogger.warn("handleUnlock", { err });
       setError("❌ Неверный пароль!");
     }
   };

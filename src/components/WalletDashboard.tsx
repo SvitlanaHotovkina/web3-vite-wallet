@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { unlockWallet } from "@/utils/wallet-unlock";
 import { getWalletSession, WalletSession } from "@/utils/walletSession";
 import NetworkSwitcher from "@/components/NetworkSwitcher";
+import Transfer from "@/components/Transfer";
+import Modal from "@/components/Modal"; // припускаємо, що є компонент модалки
 
 export default function WalletDashboard({
   walletSession,
@@ -12,6 +14,7 @@ export default function WalletDashboard({
 }) {
   const [privateKey, setPrivateKey] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<WalletSession>(walletSession);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   useEffect(() => {
     console.log("📦 useEffect запущено");
@@ -55,14 +58,22 @@ export default function WalletDashboard({
     <div className="max-w-xl mx-auto p-4 space-y-4">
       <h2 className="text-xl font-bold">🏦 Ваш Web3 гаманець</h2>
       <div className="p-4 bg-gray-100 rounded-xl space-y-2">
-        <p>
+        <p className="text-red-600">
           <strong>📌 Адреса:</strong> {sessionData.address}
         </p>
-        <p>
+        <p className="text-blue-600">
           <strong>🌐 Мережа:</strong> {sessionData.network}
         </p>
-        <p>
+        <p className="text-yellow-600">
           <strong>💰 Баланс:</strong> {sessionData.balance} {nativeSymbol}
+          {parseFloat(sessionData.balance) > 0 && (
+            <button
+              onClick={() => setShowTransferModal(true)}
+              className="ml-4 text-sm bg-yellow-400 text-yellow-900 px-3 py-1 rounded shadow"
+            >
+              Відправити на гаманець
+            </button>
+          )}
         </p>
         {sessionData.tokens && sessionData.tokens.length > 0 && (
           <div>
@@ -100,6 +111,12 @@ export default function WalletDashboard({
       >
         Показати приватний ключ
       </button>
+
+      {showTransferModal && (
+        <Modal onClose={() => setShowTransferModal(false)}>
+          <Transfer walletSession={sessionData} />
+        </Modal>
+      )}
     </div>
   );
 }

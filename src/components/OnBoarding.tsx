@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createWallet } from "@/utils/wallet-create";
 import { restoreWallet } from "@/utils/wallet-restore";
+import { serverLogger } from "@/utils/server-logger";
 
 export default function OnBoarding({ onCreated }: { onCreated: () => void }) {
   const [walletData, setWalletData] = useState<null | {
@@ -49,7 +50,7 @@ export default function OnBoarding({ onCreated }: { onCreated: () => void }) {
       }
       setWalletData(wallet);
     } catch (err) {
-      console.log(err);
+      serverLogger.warn("handleRestore", { err });
       alert("❌ Неверная мнемофраза!");
     }
   };

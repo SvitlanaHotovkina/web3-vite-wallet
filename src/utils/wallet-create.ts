@@ -2,6 +2,7 @@ import { HDNodeWallet } from "ethers/wallet";
 import { toUtf8Bytes } from "ethers";
 import { saveEncryptedWallet } from "@/utils/walletStorage";
 import { createWalletSession } from "./walletSession";
+import { serverLogger } from "./server-logger";
 
 // --- Генерация случайного пароля ---
 function generatePassword(length = 12): string {
@@ -61,7 +62,7 @@ async function encryptMnemonic(mnemonic: string, password: string) {
 
 // --- Создание кошелька ---
 export async function createWallet() {
-  console.log("🚀 Создание нового кошелька...");
+  serverLogger.debug("🚀 Создание нового кошелька...");
   const newRandom = HDNodeWallet.createRandom();
   if (!newRandom?.mnemonic) throw new Error("Не удалось создать фразу!");
 
@@ -77,13 +78,13 @@ export async function createWallet() {
     balance: "0.0",
   });
 
-  console.log("🔐 Генерируем пароль и шифруем данные...");
+  serverLogger.debug("🔐 Генерируем пароль и шифруем данные...");
   const encrypted = await encryptMnemonic(mnemonic, password);
 
-  console.log("💾 Сохраняем кошелек в IndexedDB...");
+  serverLogger.debug("💾 Сохраняем кошелек в IndexedDB...");
   await saveEncryptedWallet(JSON.stringify(encrypted));
 
-  console.log("✅ Кошелек успешно создан!");
+  serverLogger.debug("✅ Кошелек успешно создан!");
   return {
     address,
     privateKey,

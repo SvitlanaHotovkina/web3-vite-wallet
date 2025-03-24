@@ -1,12 +1,13 @@
 import { deleteWallet as clearWalletFromDB } from "@/utils/walletStorage";
+import { serverLogger } from "./server-logger";
 
 export async function deleteWallet(): Promise<void> {
   try {
-    console.log("🗑️ Удаляем кошелек из IndexedDB...");
+    serverLogger.debug("🗑️ Удаляем кошелек из IndexedDB...");
     await clearWalletFromDB();
-    console.log("✅ Кошелек успешно удален!");
+    serverLogger.debug("✅ Кошелек успешно удален!");
   } catch (error) {
-    console.error("Ошибка при удалении кошелька:", error);
+    serverLogger.warn("Ошибка при удалении кошелька:", { error });
     throw new Error("❌ Не удалось удалить кошелек!");
   }
 }

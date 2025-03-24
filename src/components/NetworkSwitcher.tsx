@@ -4,6 +4,7 @@ import {
   getWalletSession,
   updateWalletSession,
 } from "@/utils/walletSession";
+import { serverLogger } from "@/utils/server-logger";
 
 export default function NetworkSwitcher() {
   const [selectedRpc, setSelectedRpc] = useState<string>("");
@@ -24,12 +25,12 @@ export default function NetworkSwitcher() {
 
     const session = await getWalletSession();
     if (!session) {
-      console.warn("❌ Сесія не знайдена");
+      serverLogger.warn("❌ Сесія не знайдена");
       return;
     }
 
     await updateWalletSession({ ...session, rpcUrl: newRpc });
-    console.log("✅ rpcUrl оновлено в сесії:", newRpc);
+    serverLogger.debug("✅ rpcUrl оновлено в сесії:", { newRpc });
   };
 
   return (
