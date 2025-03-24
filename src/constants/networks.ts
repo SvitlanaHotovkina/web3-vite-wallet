@@ -21,28 +21,89 @@ export const NETWORKS = [
 
 export const KNOWN_TOKENS: Record<
   string,
-  { symbol: string; address: string }[]
+  { symbol: string; address: string; router: string; abi: string[] }[]
 > = {
   sepolia: [
-    { symbol: "USDC", address: "0x6C3EA9036406852006290770BEdFcAbA0e23A0aD" },
-    { symbol: "DAI", address: "0x0000000000000000000000000000000000000000" },
+    {
+      symbol: "USDC",
+      address: "0x6C3EA9036406852006290770BEdFcAbA0e23A0aD",
+      router: "",
+      abi: [],
+    },
+    {
+      symbol: "DAI",
+      address: "0x0000000000000000000000000000000000000000",
+      router: "",
+      abi: [],
+    },
   ],
   goerli: [
-    { symbol: "USDT", address: "0x509Ee0d083DdF8AC028f2a56731412edD63223B9" },
+    {
+      symbol: "USDT",
+      address: "0x509Ee0d083DdF8AC028f2a56731412edD63223B9",
+      router: "",
+      abi: [],
+    },
   ],
   bnb: [
-    { symbol: "BUSD", address: "0xe9e7cea3dedca5984780bafc599bd69add087d56" },
+    {
+      symbol: "BUSD",
+      address: "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+      router: "",
+      abi: [],
+    },
   ],
   bnbt: [
-    { symbol: "BUSD", address: "0x8301F2213c0eeD49a7E28Ae4c3e91722919B8B47" },
+    {
+      symbol: "BUSD",
+      address: "0x8301F2213c0eeD49a7E28Ae4c3e91722919B8B47",
+      router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      abi: [
+        "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
+        "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+      ],
+    },
+    {
+      symbol: "WBNB",
+      address: "0xae13d989dac2f0debff460ac112a837c89baa7cd",
+      router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      abi: [
+        "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
+        "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+      ],
+    },
+    {
+      symbol: "USDT",
+      address: "0x7ef95a0fe8ef2e9290a6f3b4c2e9cb0b2e6e8f5b",
+      router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      abi: [
+        "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
+        "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+      ],
+    },
   ],
   mumbai: [
-    { symbol: "USDC", address: "0x2058A9d7613eee744279e3856Ef0eada5FCbaA54" },
+    {
+      symbol: "USDC",
+      address: "0x2058A9d7613eee744279e3856Ef0eada5FCbaA54",
+      router: "",
+      abi: [],
+    },
   ],
   amoy: [
-    { symbol: "tUSDC", address: "0xE51E2b5d261cA2E432A30154fF94Fb282F9A64f4" },
+    {
+      symbol: "tUSDC",
+      address: "0xE51E2b5d261cA2E432A30154fF94Fb282F9A64f4",
+      router: "",
+      abi: [],
+    },
   ],
   zkevm: [
-    { symbol: "zUSDC", address: "0x53fECa167DdA6F2dE2eAEE7025C57A5aC92C96a2" },
+    {
+      symbol: "zUSDC",
+      address: "0x53fECa167DdA6F2dE2eAEE7025C57A5aC92C96a2",
+      router: "",
+      abi: [],
+    },
   ],
 };
