@@ -2,19 +2,13 @@ import { ethers, Contract, Network } from "ethers";
 import { getWalletSession, WalletSession } from "./walletSession";
 import { JsonRpcProvider } from "ethers";
 import { serverLogger } from "./server-logger";
+import { KNOWN_TOKENS } from "@/constants/networks";
 
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function decimals() view returns (uint8)",
   "function symbol() view returns (string)",
 ];
-
-const KNOWN_TOKENS: Record<string, { symbol: string; address: string }[]> = {
-  sepolia: [
-    { symbol: "USDC", address: "0x6C3EA9036406852006290770BEdFcAbA0e23A0aD" },
-    { symbol: "DAI", address: "0x0000000000000000000000000000000000000000" },
-  ],
-};
 
 export async function getWalletInfo(
   address: string,

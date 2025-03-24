@@ -1,3 +1,4 @@
+import { NETWORKS } from "@/constants/networks";
 import { openDB } from "idb";
 
 const DB_NAME = "WalletDB";
@@ -17,25 +18,6 @@ export type WalletSession = {
   }>;
   lastTxHash?: string;
 };
-
-export const NETWORKS = [
-  { name: "Sepolia", rpcUrl: "https://rpc.sepolia.org" },
-  { name: "Goerli", rpcUrl: "https://rpc.ankr.com/eth_goerli" },
-  { name: "Polygon Mumbai", rpcUrl: "https://rpc-mumbai.maticvigil.com" },
-  { name: "BSC Mainnet", rpcUrl: "https://bsc-dataseed.binance.org/" },
-  {
-    name: "BSC Testnet",
-    rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-  },
-  {
-    name: "Polygon zkEVM Testnet-1442",
-    rpcUrl: "https://rpc.public.zkevm-test.net",
-  },
-  {
-    name: "Polygon Amoy Testnet-80002",
-    rpcUrl: "https://rpc-amoy.polygon.technology",
-  },
-];
 
 async function getDB() {
   return openDB(DB_NAME, 1, {

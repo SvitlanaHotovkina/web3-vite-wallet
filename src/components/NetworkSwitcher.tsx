@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  NETWORKS,
-  getWalletSession,
-  updateWalletSession,
-} from "@/utils/walletSession";
+import { getWalletSession, updateWalletSession } from "@/utils/walletSession";
 import { serverLogger } from "@/utils/server-logger";
+import { NETWORKS } from "@/constants/networks";
 
 export default function NetworkSwitcher() {
   const [selectedRpc, setSelectedRpc] = useState<string>("");
