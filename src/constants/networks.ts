@@ -73,10 +73,24 @@ export const KNOWN_TOKENS: Record<
       ],
     },
     {
-      symbol: "USDT",
-      address: "0x7ef95a0fe8ef2e9290a6f3b4c2e9cb0b2e6e8f5b",
+      symbol: "USDC",
+      address: "0x64544969ed7EBf5f083679233325356EbE738930",
       router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
       abi: [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function approve(address spender, uint256 amount) returns (bool)",
+        "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
+        "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+      ],
+    },
+    {
+      // used only for swap
+      symbol: "tBNB",
+      address: "0xae13d989dac2f0debff460ac112a837c89baa7cd", // це WBNB на BNB Testnet
+      router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", // PancakeSwap Testnet
+      abi: [
+        "function deposit() public payable",
+        "function approve(address spender, uint256 amount) public returns (bool)",
         "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
         "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
       ],

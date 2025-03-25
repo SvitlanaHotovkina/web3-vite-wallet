@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { WalletSession } from "@/utils/walletSession";
-import { unlockWallet } from "@/utils/wallet-unlock";
-import { JsonRpcProvider, Wallet, ethers } from "ethers";
 import { KNOWN_TOKENS } from "@/constants/networks";
-import { serverLogger } from "@/utils/server-logger";
+import { useTokenSwap } from "@/hooks/useTokenSwap";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 
 export default function Swap({
   walletSession,
@@ -13,137 +12,20 @@ export default function Swap({
   const [fromTokenKey, setFromTokenKey] = useState("");
   const [toTokenKey, setToTokenKey] = useState("");
   const [amount, setAmount] = useState("");
-  const [expectedAmount, setExpectedAmount] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [isSwapping, setIsSwapping] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
 
   const networkKey = walletSession.network.toLowerCase();
   const tokens = KNOWN_TOKENS[networkKey] || [];
   const fromToken = tokens.find((t) => t.symbol === fromTokenKey);
   const toToken = tokens.find((t) => t.symbol === toTokenKey);
 
-  useEffect(() => {
-    if (!fromToken) return;
-    const fetchBalance = async () => {
-      try {
-        const provider = new JsonRpcProvider(walletSession.rpcUrl);
-        const tokenContract = new ethers.Contract(
-          fromToken.address,
-          ["function balanceOf(address owner) view returns (uint256)"],
-          provider
-        );
-        const bal = await tokenContract.balanceOf(walletSession.address);
-        setBalance(ethers.formatUnits(bal, 18));
-      } catch (err) {
-        serverLogger.warn("fetchBalance", { err });
-        setBalance(null);
-      }
-    };
-    fetchBalance();
-  }, [fromToken, walletSession]);
+  const balance = useTokenBalance(walletSession, fromToken);
+
+  const { isSwapping, expectedAmount, message, calculateExpectedAmount, swap } =
+    useTokenSwap(walletSession, fromToken, toToken, amount);
 
   useEffect(() => {
-    if (!fromToken || !toToken || fromToken.abi.length === 0) return;
-    const calculateExpectedAmount = async () => {
-      if (!amount || isNaN(parseFloat(amount))) return;
-      try {
-        const provider = new JsonRpcProvider(walletSession.rpcUrl);
-        const router = new ethers.Contract(
-          fromToken.router,
-          fromToken.abi,
-          provider
-        );
-        const amountIn = ethers.parseUnits(amount, 18);
-        const path = [fromToken.address, toToken.address];
-        const amountsOut = await router.getAmountsOut(amountIn, path);
-        setExpectedAmount(ethers.formatUnits(amountsOut[1], 18));
-      } catch (err) {
-        serverLogger.warn("calculateExpectedAmount", { err });
-        setExpectedAmount(null);
-      }
-    };
     calculateExpectedAmount();
-  }, [amount, fromToken, toToken, walletSession]);
-
-  const handleSwap = async () => {
-    if (isSwapping || !fromToken || !toToken || fromToken.abi.length === 0)
-      return;
-    if (!amount) {
-      setMessage("❗ Оберіть токени та введіть суму");
-      return;
-    }
-
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      setMessage("❗ Введіть коректну суму");
-      return;
-    }
-
-    const password = prompt("Введіть пароль для підпису трансакції:");
-    if (!password) return;
-
-    try {
-      setIsSwapping(true);
-      setMessage("🔓 Розблокування гаманця...");
-      const wallet = await unlockWallet(password);
-
-      setMessage("📡 Підготовка до свопу...");
-      const provider = new JsonRpcProvider(walletSession.rpcUrl);
-      const signer = new Wallet(wallet.privateKey, provider);
-
-      const router = new ethers.Contract(
-        fromToken.router,
-        fromToken.abi,
-        signer
-      );
-      const amountIn = ethers.parseUnits(amount, 18);
-      const path = [fromToken.address, toToken.address];
-
-      const tokenInContract = new ethers.Contract(
-        fromToken.address,
-        [
-          "function allowance(address owner, address spender) view returns (uint256)",
-          "function approve(address spender, uint256 amount) returns (bool)",
-        ],
-        signer
-      );
-
-      const currentAllowance = await tokenInContract.allowance(
-        wallet.address,
-        fromToken.router
-      );
-
-      if (currentAllowance.lt(amountIn)) {
-        setMessage("✅ Апрув токенів...");
-        const approveTx = await tokenInContract.approve(
-          fromToken.router,
-          amountIn
-        );
-        await approveTx.wait();
-      }
-
-      setMessage("🔁 Своп у процесі...");
-      const amountsOut = await router.getAmountsOut(amountIn, path);
-      const amountOutMin = amountsOut[1].mul(90).div(100);
-
-      const tx = await router.swapExactTokensForTokens(
-        amountIn,
-        amountOutMin,
-        path,
-        wallet.address,
-        Math.floor(Date.now() / 1000) + 60 * 10
-      );
-
-      await tx.wait();
-      setMessage("✅ Своп успішно виконано. Хеш трансакції: " + tx.hash);
-    } catch (error) {
-      console.error(error);
-      setMessage("❌ Помилка при виконанні свопу");
-    } finally {
-      setIsSwapping(false);
-    }
-  };
+  }, [amount, fromToken, toToken, calculateExpectedAmount]);
 
   return (
     <div className="p-4 space-y-4">
@@ -201,7 +83,7 @@ export default function Swap({
       )}
 
       <button
-        onClick={handleSwap}
+        onClick={swap}
         disabled={
           isSwapping || !fromToken || !toToken || fromToken.abi.length === 0
         }

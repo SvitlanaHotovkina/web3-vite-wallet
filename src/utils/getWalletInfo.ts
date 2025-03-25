@@ -16,11 +16,9 @@ export async function getWalletInfo(
   abortSignal?: AbortSignal
 ): Promise<WalletSession | null> {
   const session = await getWalletSession();
-
   if (!session) return null;
 
   serverLogger.debug("getWalletInfo", { rpcUrl });
-
   if (!rpcUrl) {
     serverLogger.warn("!rpcUrl");
     return null;
@@ -41,7 +39,7 @@ export async function getWalletInfo(
 
     networkName = network.name.toLowerCase();
   } catch (error) {
-    serverLogger.debug("❌ Provider/network error:", { error });
+    serverLogger.debug("❌ Provider/network error:", { error: String(error) });
     return null;
   }
 
@@ -50,26 +48,31 @@ export async function getWalletInfo(
 
   for (const token of knownTokens) {
     if (abortSignal?.aborted) break;
-    try {
-      const contract = new Contract(token.address, ERC20_ABI, provider);
+    if (token.symbol !== "tBNB") {
+      try {
+        const contract = new Contract(token.address, ERC20_ABI, provider);
+        const rawBalance = await contract.balanceOf(address);
+        if (abortSignal?.aborted) break;
 
-      const rawBalance = await contract.balanceOf(address);
-      if (abortSignal?.aborted) break;
+        const decimals = await contract.decimals();
+        if (abortSignal?.aborted) break;
 
-      const decimals = await contract.decimals();
-      if (abortSignal?.aborted) break;
+        const symbol = await contract.symbol();
+        if (abortSignal?.aborted) break;
 
-      const symbol = await contract.symbol();
-      if (abortSignal?.aborted) break;
+        const balanceFormatted = ethers.formatUnits(rawBalance, decimals);
 
-      tokens.push({
-        symbol: symbol || token.symbol,
-        balance: (Number(rawBalance) / 10 ** decimals).toFixed(4),
-        contractAddress: token.address,
-        decimals,
-      });
-    } catch (e) {
-      serverLogger.warn(`⚠️ Не вдалося отримати токен ${token.symbol}:`, { e });
+        tokens.push({
+          symbol: symbol || token.symbol,
+          balance: parseFloat(balanceFormatted).toFixed(4),
+          contractAddress: token.address,
+          decimals,
+        });
+      } catch (e) {
+        serverLogger.warn(`⚠️ Не вдалося отримати токен ${token.symbol}`, {
+          error: String(e),
+        });
+      }
     }
   }
 

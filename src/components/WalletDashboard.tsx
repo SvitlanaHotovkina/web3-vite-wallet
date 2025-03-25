@@ -107,9 +107,6 @@ export default function WalletDashboard({
         <div>
           <strong>🪙 Токени:</strong>
           <ul className="list-disc list-inside text-sm">
-            <li key="native">
-              {nativeSymbol}: {sessionData.balance}
-            </li>
             {sessionData.tokens
               ?.filter((t) => parseFloat(t.balance) > 0)
               .map((token) => (
